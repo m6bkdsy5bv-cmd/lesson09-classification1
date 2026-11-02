@@ -3,12 +3,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# ------------------------------------------
+# ==========================================
 # 1. 페이지 설정
-# ------------------------------------------
+# ==========================================
 
 st.set_page_config(
-    page_title="데이터 탐색 | 뇌졸중 예측 실습실",
+    page_title="탐색 | 뇌졸중 예측 실습실",
     page_icon="🔎",
     layout="wide"
 )
@@ -19,15 +19,19 @@ DATA_URL = (
 )
 
 
-# ------------------------------------------
+# ==========================================
 # 2. 데이터 불러오기
-# ------------------------------------------
+# ==========================================
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv(DATA_URL, encoding="utf-8")
 
-    # 분석에 필요한 열의 숫자형 변환
+    df = pd.read_csv(
+        DATA_URL,
+        encoding="utf-8"
+    )
+
+    # 숫자형 데이터 변환
     numeric_columns = [
         "age",
         "avg_glucose_level",
@@ -55,9 +59,9 @@ except Exception as e:
     st.stop()
 
 
-# ------------------------------------------
-# 3. 제목
-# ------------------------------------------
+# ==========================================
+# 3. 페이지 제목
+# ==========================================
 
 st.title("🔎 데이터 탐색")
 
@@ -73,9 +77,9 @@ st.markdown(
 st.divider()
 
 
-# ------------------------------------------
+# ==========================================
 # 4. 나이와 평균 혈당 분포
-# ------------------------------------------
+# ==========================================
 
 st.header("📊 1. 나이와 평균 혈당의 분포")
 
@@ -92,8 +96,10 @@ with col1:
 
     st.subheader("나이 분포")
 
+    age_data = df.dropna(subset=["age"])
+
     fig_age = px.histogram(
-        df.dropna(subset=["age"]),
+        age_data,
         x="age",
         nbins=30,
         title="나이 분포",
@@ -120,8 +126,12 @@ with col2:
 
     st.subheader("평균 혈당 분포")
 
+    glucose_data = df.dropna(
+        subset=["avg_glucose_level"]
+    )
+
     fig_glucose = px.histogram(
-        df.dropna(subset=["avg_glucose_level"]),
+        glucose_data,
         x="avg_glucose_level",
         nbins=30,
         title="평균 혈당 분포",
@@ -147,23 +157,22 @@ with col2:
 st.divider()
 
 
-# ------------------------------------------
+# ==========================================
 # 5. 뇌졸중 유무별 상자그림
-# ------------------------------------------
+# ==========================================
 
 st.header("📦 2. 뇌졸중 유무에 따른 나이와 평균 혈당 비교")
 
 st.markdown(
     """
-    상자그림은 데이터의 중앙값과 분포,
-    이상치 등을 비교할 때 사용하는 그래프입니다.
+    상자그림은 중앙값과 데이터의 분포,
+    이상치 등을 확인할 수 있는 그래프입니다.
 
-    뇌졸중을 겪지 않은 사람과 겪은 사람의
-    나이 및 평균 혈당을 비교해 봅시다.
+    뇌졸중을 겪은 사람과 겪지 않은 사람의
+    나이와 평균 혈당을 비교해 봅시다.
     """
 )
 
-# 그룹 이름 만들기
 df["stroke_group"] = df["stroke"].map({
     0: "뇌졸중 없음",
     1: "뇌졸중 있음"
@@ -254,13 +263,13 @@ with col2:
     )
 
 
-# 그룹별 평균값 표
+# 그룹별 평균값 계산
 st.subheader("그룹별 평균값 비교")
 
 mean_table = (
     df.groupby("stroke_group", observed=False)
     .agg(
-        나이_평균=("age", "mean"),
+        평균_나이=("age", "mean"),
         평균_혈당=("avg_glucose_level", "mean"),
         사람_수=("stroke", "count")
     )
@@ -288,9 +297,9 @@ st.dataframe(
 st.divider()
 
 
-# ------------------------------------------
+# ==========================================
 # 6. 고혈압 유무별 뇌졸중 비율
-# ------------------------------------------
+# ==========================================
 
 st.header("❤️ 3. 고혈압 유무별 뇌졸중 비율")
 
@@ -302,7 +311,9 @@ st.markdown(
 )
 
 hypertension_data = (
-    df.dropna(subset=["hypertension", "stroke"])
+    df.dropna(
+        subset=["hypertension", "stroke"]
+    )
     .groupby("hypertension")
     .agg(
         전체_인원=("stroke", "count"),
@@ -323,21 +334,25 @@ hypertension_data["고혈압 여부"] = (
         0: "고혈압 없음",
         1: "고혈압 있음"
     })
-    .fillna(hypertension_data["hypertension"].astype(str))
 )
 
 fig_hypertension = px.bar(
     hypertension_data,
     x="고혈압 여부",
     y="뇌졸중_비율",
-    text=hypertension_data["뇌졸중_비율"].round(2).astype(str) + "%",
+    text=hypertension_data["뇌졸중_비율"].map(
+        lambda x: f"{x:.2f}%"
+    ),
     title="고혈압 유무별 뇌졸중 발생 비율",
     labels={
         "고혈압 여부": "고혈압 여부",
         "뇌졸중_비율": "뇌졸중 발생 비율 (%)"
     },
     color="고혈압 여부",
-    color_discrete_sequence=["#72B7B2", "#E45756"]
+    color_discrete_map={
+        "고혈압 없음": "#72B7B2",
+        "고혈압 있음": "#E45756"
+    }
 )
 
 fig_hypertension.update_traces(
@@ -356,7 +371,12 @@ st.plotly_chart(
 
 st.dataframe(
     hypertension_data[
-        ["고혈압 여부", "전체_인원", "뇌졸중_인원", "뇌졸중_비율"]
+        [
+            "고혈압 여부",
+            "전체_인원",
+            "뇌졸중_인원",
+            "뇌졸중_비율"
+        ]
     ].rename(columns={
         "전체_인원": "전체 인원",
         "뇌졸중_인원": "뇌졸중 인원",
@@ -370,9 +390,9 @@ st.dataframe(
 st.divider()
 
 
-# ------------------------------------------
+# ==========================================
 # 7. 심장병 유무별 뇌졸중 비율
-# ------------------------------------------
+# ==========================================
 
 st.header("💗 4. 심장병 유무별 뇌졸중 비율")
 
@@ -384,7 +404,9 @@ st.markdown(
 )
 
 heart_data = (
-    df.dropna(subset=["heart_disease", "stroke"])
+    df.dropna(
+        subset=["heart_disease", "stroke"]
+    )
     .groupby("heart_disease")
     .agg(
         전체_인원=("stroke", "count"),
@@ -405,21 +427,25 @@ heart_data["심장병 여부"] = (
         0: "심장병 없음",
         1: "심장병 있음"
     })
-    .fillna(heart_data["heart_disease"].astype(str))
 )
 
 fig_heart = px.bar(
     heart_data,
     x="심장병 여부",
     y="뇌졸중_비율",
-    text=heart_data["뇌졸중_비율"].round(2).astype(str) + "%",
+    text=heart_data["뇌졸중_비율"].map(
+        lambda x: f"{x:.2f}%"
+    ),
     title="심장병 유무별 뇌졸중 발생 비율",
     labels={
         "심장병 여부": "심장병 여부",
         "뇌졸중_비율": "뇌졸중 발생 비율 (%)"
     },
     color="심장병 여부",
-    color_discrete_sequence=["#72B7B2", "#E45756"]
+    color_discrete_map={
+        "심장병 없음": "#72B7B2",
+        "심장병 있음": "#E45756"
+    }
 )
 
 fig_heart.update_traces(
@@ -438,7 +464,12 @@ st.plotly_chart(
 
 st.dataframe(
     heart_data[
-        ["심장병 여부", "전체_인원", "뇌졸중_인원", "뇌졸중_비율"]
+        [
+            "심장병 여부",
+            "전체_인원",
+            "뇌졸중_인원",
+            "뇌졸중_비율"
+        ]
     ].rename(columns={
         "전체_인원": "전체 인원",
         "뇌졸중_인원": "뇌졸중 인원",
@@ -452,9 +483,9 @@ st.dataframe(
 st.divider()
 
 
-# ------------------------------------------
-# 8. BMI 결측자 뇌졸중 비율
-# ------------------------------------------
+# ==========================================
+# 8. BMI 결측자와 전체 뇌졸중 비율
+# ==========================================
 
 st.header("📋 5. BMI 빈 값과 뇌졸중 발생 비율")
 
@@ -470,10 +501,6 @@ st.markdown(
 # BMI 결측자
 missing_bmi = df[df["bmi"].isna()]
 
-# 전체 데이터
-total_count = len(df)
-
-# BMI 결측자 통계
 missing_bmi_count = len(missing_bmi)
 
 missing_bmi_stroke = int(
@@ -485,7 +512,9 @@ missing_bmi_ratio = (
     if missing_bmi_count > 0 else 0
 )
 
-# 전체 통계
+# 전체 데이터
+total_count = len(df)
+
 total_stroke_count = int(
     (df["stroke"] == 1).sum()
 )
@@ -529,9 +558,9 @@ st.info(
 st.divider()
 
 
-# ------------------------------------------
+# ==========================================
 # 9. 흡연 상태별 사람 수
-# ------------------------------------------
+# ==========================================
 
 st.header("🚬 6. 흡연 상태별 사람 수")
 
@@ -562,9 +591,9 @@ st.dataframe(
 st.divider()
 
 
-# ------------------------------------------
+# ==========================================
 # 10. 마무리
-# ------------------------------------------
+# ==========================================
 
 st.markdown(
     """
