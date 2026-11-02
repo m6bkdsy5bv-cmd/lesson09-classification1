@@ -132,10 +132,10 @@ st.markdown(
     """
 )
 
-# 주요 데이터 통계
 total_people = len(df)
 total_columns = len(df.columns)
 stroke_people = int((df["stroke"] == 1).sum())
+
 stroke_ratio = (
     stroke_people / total_people * 100
     if total_people > 0 else 0
@@ -144,28 +144,17 @@ stroke_ratio = (
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric(
-        label="👥 전체 사람 수",
-        value=f"{total_people:,}명"
-    )
+    st.metric("👥 전체 사람 수", f"{total_people:,}명")
 
 with col2:
-    st.metric(
-        label="📋 전체 열 개수",
-        value=f"{total_columns}개"
-    )
+    st.metric("📋 전체 열 개수", f"{total_columns}개")
 
 with col3:
-    st.metric(
-        label="🧠 뇌졸중 발생 인원",
-        value=f"{stroke_people:,}명"
-    )
+    st.metric("🧠 뇌졸중 발생 인원", f"{stroke_people:,}명")
 
 with col4:
-    st.metric(
-        label="📈 뇌졸중 발생 비율",
-        value=f"{stroke_ratio:.2f}%"
-    )
+    st.metric("📈 뇌졸중 발생 비율", f"{stroke_ratio:.2f}%")
+
 
 st.divider()
 
@@ -182,11 +171,9 @@ st.markdown(
     빈 값의 개수가 표시되어 있습니다.
 
     **우리말 뜻** 칸은 교재를 참고하여 직접 입력해 보세요.
-    입력한 내용은 저장 버튼을 누르면 JSON 파일에 저장됩니다.
     """
 )
 
-# 열별 데이터 정보 만들기
 column_info = []
 
 saved_meanings = records.get("column_meanings", {})
@@ -207,7 +194,6 @@ for column in df.columns:
 
 info_df = pd.DataFrame(column_info)
 
-# 사용자가 직접 수정할 수 있는 표
 edited_df = st.data_editor(
     info_df,
     use_container_width=True,
@@ -219,23 +205,20 @@ edited_df = st.data_editor(
         "빈 값 개수"
     ],
     column_config={
-        "열 이름": st.column_config.TextColumn(
-            "열 이름"
-        ),
+        "열 이름": st.column_config.TextColumn("열 이름"),
         "우리말 뜻": st.column_config.TextColumn(
             "우리말 뜻",
             help="교재를 참고하여 우리말 뜻을 입력하세요.",
             width="large"
         ),
-        "값의 종류": st.column_config.TextColumn(
-            "값의 종류"
-        ),
+        "값의 종류": st.column_config.TextColumn("값의 종류"),
         "빈 값 개수": st.column_config.NumberColumn(
             "빈 값 개수",
             format="%d"
         )
     }
 )
+
 
 st.divider()
 
@@ -246,17 +229,14 @@ st.divider()
 
 st.header("🔍 3. 데이터 미리 보기")
 
-st.markdown(
-    """
-    실제 데이터의 처음 다섯 줄을 확인해 봅시다.
-    """
-)
+st.markdown("실제 데이터의 처음 다섯 줄을 확인해 봅시다.")
 
 st.dataframe(
     df.head(5),
     use_container_width=True,
     hide_index=True
 )
+
 
 st.divider()
 
@@ -266,12 +246,6 @@ st.divider()
 # ------------------------------------------
 
 st.header("📚 4. 데이터 출처")
-
-st.markdown(
-    """
-    교재를 참고하여 이 데이터의 출처를 입력해 보세요.
-    """
-)
 
 data_source = st.text_area(
     "데이터 출처 및 참고 자료",
@@ -297,19 +271,15 @@ if st.button(
     for _, row in edited_df.iterrows():
         meanings[row["열 이름"]] = row["우리말 뜻"]
 
-    save_records(
-        meanings,
-        data_source
-    )
+    save_records(meanings, data_source)
 
     st.success(
         "저장되었습니다! "
         "새로고침해도 입력한 내용을 다시 불러옵니다."
     )
 
-st.caption(
-    "저장 위치: 내_기록/데이터_설명.json"
-)
+
+st.caption("저장 위치: 내_기록/데이터_설명.json")
 
 st.divider()
 
